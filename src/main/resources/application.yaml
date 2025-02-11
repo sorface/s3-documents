@@ -1,0 +1,22 @@
+sorface:
+  document:
+    bucket: sorface-store
+    minio-host: https://storage.yandexcloud.net/
+    minio_accessKey: **********
+    minio_secretKey: *********
+
+spring:
+  application:
+    name: s3-documents
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://pasport
+
+logging:
+  level:
+    root: debug
+  pattern:
+    console: '%boldGreen(%d{yyyy-MM-dd HH:mm:ss}) - %yellow([%thread]) %highlight(%-5level) %cyan(%logger{36}) - %msg%n'
+
