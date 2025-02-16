@@ -1,18 +1,28 @@
+server:
+  port: ${APPLICATION_TARGET_PORT:9005}
+
+application:
+  metadata:
+    version: ${APPLICATION_METADATA_VERSION:1.0.0}
+
 sorface:
   document:
     bucket: sorface-store
     minio-host: https://storage.yandexcloud.net/
-    minio_accessKey: **********
-    minio_secretKey: *********
+    minio_accessKey: ${BUCKET_ACCESS_KEY:-none}
+    minio_secretKey: ${BUCKET_SECRET_KEY:-none}
 
 spring:
   application:
     name: s3-documents
+  banner:
+    location: classpath:banner.txt
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://pasport
+          issuer-uri: ${PASSPORT_SERVICE_URL:http://localhost:8080}
 
 logging:
   level:
