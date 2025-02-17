@@ -34,6 +34,11 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-resource-server</artifactId>
 		</dependency>
@@ -163,21 +168,6 @@
 						<version>${kotlin.version}</version>
 					</dependency>
 				</dependencies>
-			</plugin>
-
-			<plugin>
-				<groupId>com.github.gantsign.maven</groupId>
-				<artifactId>ktlint-maven-plugin</artifactId>
-				<version>1.11.2</version>
-				<executions>
-					<execution>
-						<id>format-and-check</id>
-						<goals>
-							<goal>format</goal>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 
 		</plugins>
