@@ -21,8 +21,8 @@ class AvatarController(
 ) {
 
     @PostMapping
-    fun upload(@RequestParam("file") file: MultipartFile, @AuthenticationPrincipal sorfacePrincipal: SorfacePrincipal) {
-        return avatarService.upload(file.contentType, file.bytes, sorfacePrincipal.id.toString())
+    fun upload(@RequestParam("file") file: MultipartFile, @AuthenticationPrincipal principal: SorfacePrincipal) {
+        return avatarService.upload(file.contentType, file.bytes, principal.id.toString())
     }
 
     @GetMapping("/{userId}")

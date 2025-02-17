@@ -1,20 +1,13 @@
 package ru.spb.sorface.service.impl
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import ru.spb.sorface.config.S3DocumentProperties
 import ru.spb.sorface.service.AvatarService
 import ru.spb.sorface.service.MinIOService
-import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
+import ru.spb.sorface.utils.ImageUtils
 
 @Service
 class AvatarServiceImpl(
@@ -28,13 +21,10 @@ class AvatarServiceImpl(
 
     private val templateList = listOf(normalPathTemplate, smallPathTemplate, mediumPathTemplate)
 
-    override fun upload(contentType: String?, content: ByteArray, userId: String,) = runBlocking {
+    override fun upload(contentType: String?, content: ByteArray, userId: String) = runBlocking {
         withContext(CoroutineName("image upload") + Dispatchers.IO) {
             if (contentType == null || !contentType.startsWith("image")) {
-                throw ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Тип загружаемого файла должен быть image/...",
-                )
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "not supported content type [$contentType]")
             }
 
             val imageType = contentType.substring(contentType.indexOf("/") + 1)
@@ -42,13 +32,12 @@ class AvatarServiceImpl(
             for (template in templateList) {
                 launch {
                     val specialPath = template.first(userId)
+
                     if (minIOService.isObjectExist(s3DocumentProperties.bucket, specialPath)) {
-                        throw ResponseStatusException(
-                            HttpStatus.ALREADY_REPORTED,
-                            "что бы добавить новый аватар необходимо сначала удалить существующий",
-                        )
+                        minIOService.deleteObject(s3DocumentProperties.bucket, specialPath)
                     }
-                    val resizeContent = resizeImage(content, imageType, template.second, template.second)
+
+                    val resizeContent = ImageUtils.resize(content, imageType, template.second, template.second)
 
                     minIOService.putObject(contentType, resizeContent, specialPath, s3DocumentProperties.bucket)
                 }
@@ -56,13 +45,12 @@ class AvatarServiceImpl(
         }
     }
 
-    override fun get(userId: String, imageSize: String?,): ByteArray {
-        val path =
-            when (imageSize) {
-                "small" -> smallPathTemplate
-                "medium" -> mediumPathTemplate
-                else -> normalPathTemplate
-            }.first(userId)
+    override fun get(userId: String, imageSize: String?): ByteArray {
+        val path = when (imageSize) {
+            "small" -> smallPathTemplate
+            "medium" -> mediumPathTemplate
+            else -> normalPathTemplate
+        }.first(userId)
 
         return if (minIOService.isObjectExist(s3DocumentProperties.bucket, path)) {
             minIOService.getObject(s3DocumentProperties.bucket, path).readBytes()
@@ -82,18 +70,5 @@ class AvatarServiceImpl(
         }
     }
 
-    private fun resizeImage(originalImage: ByteArray, imageType: String, targetWidth: Int?, targetHeight: Int?,): ByteArray {
-        if (targetWidth == null || targetHeight == null) {
-            return originalImage
-        }
-        val resizedImage = BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
-        resizedImage
-            .createGraphics()
-            .also { it.drawImage(ImageIO.read(originalImage.inputStream()), 0, 0, targetWidth, targetHeight, null) }
-            .also { it.dispose() }
 
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        resizedImage.let { ImageIO.write(it, imageType, byteArrayOutputStream) }
-        return byteArrayOutputStream.use { it.toByteArray() }
-    }
 }
